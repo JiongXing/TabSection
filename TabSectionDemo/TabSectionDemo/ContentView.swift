@@ -12,10 +12,6 @@ struct ContentView: View {
     let tabs = ["推荐", "关注", "最新", "热门", "视频", "科技", "娱乐", "体育"]
     /// 当前选中的标签索引
     @State private var currentSelect: Int = 0
-    /// 所有 Tab 的高度缓存（key: tab 索引, value: 高度）
-    @State private var tabHeights: [Int: CGFloat] = [:]
-    /// 当前显示高度（滑动结束后更新）
-    @State private var displayHeight: CGFloat = 0
     
     var body: some View {
         GeometryReader { geometry in
@@ -29,12 +25,8 @@ struct ContentView: View {
                     // Tab 组件作为 Section Header，实现吸顶效果
                     Section {
                         TabSectionContentView(
-                            tabs: tabs,
-                            currentSelect: $currentSelect,
-                            tabHeights: $tabHeights,
-                            displayHeight: $displayHeight,
-                            containerHeight: geometry.size.height,
-                            generateContentItems: generateContentItems
+                            tab: tabs[currentSelect],
+                            items: generateContentItems(for: tabs[currentSelect])
                         )
                     } header: {
                         TabSectionHeader(
@@ -170,70 +162,69 @@ private struct FeatureButton: View {
     }
 }
 
-/// Tab 区域内容视图（使用 PageView 实现）
+/// Tab 区域内容视图（直接渲染当前选中的内容）
 private struct TabSectionContentView: View {
-    let tabs: [String]
-    @Binding var currentSelect: Int
-    /// 所有 Tab 的高度缓存
-    @Binding var tabHeights: [Int: CGFloat]
-    /// 当前显示高度（滑动结束后更新）
-    @Binding var displayHeight: CGFloat
-    let containerHeight: CGFloat
-    let generateContentItems: (String) -> [String]
-    
-    /// 计算当前应该显示的高度
-    /// 策略：取 displayHeight 和当前 tab 高度的较大值，确保内容不被截断
-    private var effectiveHeight: CGFloat {
-        let currentTabHeight = tabHeights[currentSelect] ?? 0
-        
-        // 首次加载前，使用容器高度
-        if displayHeight == 0 && currentTabHeight == 0 {
-            return containerHeight
-        }
-        
-        // 取 displayHeight 和当前 tab 高度的较大值
-        // 这样可以确保：
-        // 1. 从小高度滑到大高度时，立即扩展以显示全部内容
-        // 2. 从大高度滑到小高度时，保持大高度直到滑动结束后才收缩
-        return max(displayHeight, currentTabHeight)
-    }
+    let tab: String
+    let items: [String]
     
     var body: some View {
-        // 使用自定义 PageView 替代 TabView，获取真正的滑动结束回调
-        PageView(
-            pageCount: tabs.count,
-            currentIndex: $currentSelect,
-            onScrollEnded: { index in
-                // 滑动真正结束后，更新显示高度
-                if let newHeight = tabHeights[index], newHeight > 0 {
-                    withAnimation(.easeInOut(duration: 0.25)) {
-                        displayHeight = newHeight
-                    }
-                    #if DEBUG
-                    print("📏 滑动结束，高度更新到 Tab[\(index)]: \(newHeight)")
-                    #endif
+        // 直接渲染当前 Tab 的内容，无需 TabView
+        LazyVStack(spacing: 16) {
+            if items.isEmpty {
+                // 空数据占位视图
+                EmptyDataView()
+            } else {
+                ForEach(items, id: \.self) { item in
+                    ContentCardView(title: item)
                 }
             }
-        ) { index in
-            TabContentView(
-                title: tabs[index],
-                items: generateContentItems(tabs[index]),
-                index: index
-            )
         }
-        .frame(height: effectiveHeight)
-        .onPreferenceChange(TabContentHeightKey.self) { heights in
-            // 更新所有 tab 的高度缓存
-            for (index, height) in heights {
-                if height > 0 {
-                    tabHeights[index] = height
-                }
-            }
-            // 首次加载时，立即设置显示高度
-            if displayHeight == 0, let currentHeight = tabHeights[currentSelect], currentHeight > 0 {
-                displayHeight = currentHeight
-            }
+        .padding([.top, .horizontal])
+        .animation(.easeInOut(duration: 0.2), value: tab)
+    }
+}
+
+/// 内容卡片视图
+private struct ContentCardView: View {
+    let title: String
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.headline)
+                .foregroundColor(.primary)
+            
+            Text("这是 \(title) 标签页的内容示例。你可以在这里放置任何内容，比如文章列表、图片、视频等。")
+                .font(.body)
+                .foregroundColor(.secondary)
+                .lineLimit(3)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding()
+        .background(Color(.systemBackground))
+        .cornerRadius(12)
+        .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+    }
+}
+
+/// 空数据占位视图
+private struct EmptyDataView: View {
+    var body: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "tray")
+                .font(.system(size: 60))
+                .foregroundColor(.gray.opacity(0.5))
+            
+            Text("暂无内容")
+                .font(.headline)
+                .foregroundColor(.secondary)
+            
+            Text("该标签页暂时没有内容")
+                .font(.subheadline)
+                .foregroundColor(.secondary.opacity(0.8))
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 60)
     }
 }
 
