@@ -3,9 +3,11 @@
 //  TabSectionDemo
 //
 //  Created by jxing on 2026/1/7.
+//  Updated on 2026/1/8 to use TabSection framework
 //
 
 import SwiftUI
+import TabSection
 
 struct ContentView: View {
     /// 标签数据
@@ -14,33 +16,27 @@ struct ContentView: View {
     @State private var currentSelect: Int = 0
     
     var body: some View {
-        GeometryReader { geometry in
-            ScrollView {
-                LazyVStack(spacing: 0, pinnedViews: [.sectionHeaders]) {
-                    // 头部内容区域（用于测试吸顶效果）
-                    Section {
-                        HeaderContentView()
-                    }
-                    
-                    // Tab 组件作为 Section Header，实现吸顶效果
-                    Section {
-                        TabSectionContentView(
-                            tab: tabs[currentSelect],
-                            items: generateContentItems(for: tabs[currentSelect])
-                        )
-                    } header: {
-                        TabSectionHeader(
-                            tabs: tabs,
-                            currentSelect: $currentSelect
-                        )
-                    }
-                }
-                .id("lazy-vstack-\(currentSelect)") // 为整个LazyVStack设置唯一id，确保内容完全刷新
+        TSStickyTabContainer(
+            tabs: tabs,
+            selectedIndex: $currentSelect,
+            headerContent: {
+                // 头部内容区域（用于测试吸顶效果）
+                HeaderContentView()
+            },
+            pageContent: { tab, index in
+                // 当前选中标签页的内容
+                TabSectionContentView(
+                    tab: tab,
+                    items: generateContentItems(for: tab)
+                )
             }
-            .refreshable {
-                // 下拉刷新功能
-                await refreshData()
-            }
+        )
+        .refreshable {
+            // 下拉刷新功能
+            await refreshData()
+        }
+        .onTabChanged { oldIndex, newIndex in
+            print("从标签 \(oldIndex) 切换到 \(newIndex)")
         }
     }
     
@@ -83,4 +79,3 @@ struct ContentView: View {
 #Preview {
     ContentView()
 }
-
