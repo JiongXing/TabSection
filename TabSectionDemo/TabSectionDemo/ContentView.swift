@@ -26,40 +26,18 @@ struct ContentView: View {
                     
                     // Tab 组件作为 Section Header，实现吸顶效果
                     Section {
-                        // TabView 内容区域
-                        // 使用 GeometryReader 解决 TabView 在 Section 中高度丢失的问题
-                        GeometryReader { _ in
-                            TabView(selection: $currentSelect) {
-                                ForEach(Array(tabs.enumerated()), id: \.offset) { index, tab in
-                                    TabContentView(
-                                        title: tab,
-                                        items: generateContentItems(for: tab)
-                                    )
-                                    .tag(index)
-                                }
-                            }
-                            .tabViewStyle(.page(indexDisplayMode: .never))
-                        }
-                        .frame(height: tabContentHeight > 0 ? tabContentHeight : geometry.size.height)
-                        .onPreferenceChange(TabContentHeightKey.self) { height in
-                            tabContentHeight = height
-                        }
+                        TabSectionContentView(
+                            tabs: tabs,
+                            currentSelect: $currentSelect,
+                            tabContentHeight: $tabContentHeight,
+                            containerHeight: geometry.size.height,
+                            generateContentItems: generateContentItems
+                        )
                     } header: {
-                        VStack(spacing: 0) {
-                            // 顶部分割线
-                            Divider()
-                                .background(Color.gray.opacity(0.2))
-                            
-                            TabsView(
-                                tabs: tabs,
-                                currentSelect: $currentSelect
-                            )
-                            .background(.white)
-                            
-                            // 底部分割线
-                            Divider()
-                                .background(Color.gray.opacity(0.2))
-                        }
+                        TabSectionHeader(
+                            tabs: tabs,
+                            currentSelect: $currentSelect
+                        )
                     }
                 }
             }
@@ -71,8 +49,31 @@ struct ContentView: View {
     }
     
     /// 生成内容项（用于演示）
+    /// 为不同的 Tab 设置不同数量的列表卡片，用于测试高度变化
     private func generateContentItems(for tab: String) -> [String] {
-        return (1..<10).map { "\(tab) - 内容 \($0)" }
+        // 根据标签名称设置不同的内容数量，用于测试高度自适应
+        let count: Int
+        switch tab {
+        case "推荐":
+            count = 3  // 少量内容
+        case "关注":
+            count = 0
+        case "最新":
+            count = 10 // 中等内容
+        case "热门":
+            count = 15
+        case "视频":
+            count = 2  // 最少内容
+        case "科技":
+            count = 8
+        case "娱乐":
+            count = 20 // 大量内容，测试高度变化
+        case "体育":
+            count = 6
+        default:
+            count = 0  // 默认值
+        }
+        return (0..<count).map { "\(tab) - 内容 \($0 + 1)" }
     }
     
     /// 下拉刷新数据
@@ -163,6 +164,65 @@ private struct FeatureButton: View {
                 .foregroundColor(.primary)
         }
         .frame(maxWidth: .infinity)
+    }
+}
+
+/// Tab 区域内容视图（TabView 部分）
+private struct TabSectionContentView: View {
+    let tabs: [String]
+    @Binding var currentSelect: Int
+    @Binding var tabContentHeight: CGFloat
+    let containerHeight: CGFloat
+    let generateContentItems: (String) -> [String]
+    
+    var body: some View {
+        // 使用 GeometryReader 解决 TabView 在 Section 中高度丢失的问题
+        GeometryReader { _ in
+            TabView(selection: $currentSelect) {
+                ForEach(Array(tabs.enumerated()), id: \.offset) { index, tab in
+                    TabContentView(
+                        title: tab,
+                        items: generateContentItems(tab)
+                    )
+                    .tag(index)
+                }
+            }
+            .tabViewStyle(.page(indexDisplayMode: .never))
+        }
+        .frame(height: tabContentHeight > 0 ? tabContentHeight : containerHeight)
+        .onPreferenceChange(TabContentHeightKey.self) { height in
+            // 注意：TabContentHeightKey 使用 max() 取所有标签页的最大高度
+            // 这确保 TabView 有足够高度显示所有标签页内容
+            // 如果希望高度随当前标签页动态变化，需要修改 TabContentHeightKey 的实现
+            tabContentHeight = height
+            #if DEBUG
+            print("📏 TabView 高度更新: \(height)")
+            #endif
+        }
+    }
+}
+
+/// Tab 区域头部视图（吸顶标签栏）
+private struct TabSectionHeader: View {
+    let tabs: [String]
+    @Binding var currentSelect: Int
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            // 顶部分割线
+            Divider()
+                .background(Color.gray.opacity(0.2))
+            
+            TabsView(
+                tabs: tabs,
+                currentSelect: $currentSelect
+            )
+            .background(.white)
+            
+            // 底部分割线
+            Divider()
+                .background(Color.gray.opacity(0.2))
+        }
     }
 }
 
