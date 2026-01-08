@@ -34,7 +34,9 @@ struct ContentView: View {
                             currentSelect: $currentSelect
                         )
                     }
+                    .id("content-section-\(currentSelect)") // 为整个Section设置唯一id，强制重新渲染
                 }
+                .id("lazy-vstack-\(currentSelect)") // 为整个LazyVStack设置唯一id，确保内容完全刷新
             }
             .refreshable {
                 // 下拉刷新功能
@@ -168,19 +170,33 @@ private struct TabSectionContentView: View {
     let items: [String]
     
     var body: some View {
-        // 直接渲染当前 Tab 的内容，无需 TabView
-        LazyVStack(spacing: 16) {
-            if items.isEmpty {
-                // 空数据占位视图
-                EmptyDataView()
+        // 根据内容数量决定使用 VStack 还是 LazyVStack
+        // 少量内容（<=10项）使用 VStack 以确保立即渲染和正确的高度计算
+        // 大量内容使用 LazyVStack 以优化性能
+        Group {
+            if items.count <= 10 {
+                // 少量内容：使用 VStack 立即渲染所有内容
+                VStack(spacing: 16) {
+                    if items.isEmpty {
+                        EmptyDataView()
+                    } else {
+                        ForEach(items, id: \.self) { item in
+                            ContentCardView(title: item)
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity) // 确保占满宽度
             } else {
-                ForEach(items, id: \.self) { item in
-                    ContentCardView(title: item)
+                // 大量内容：使用 LazyVStack 优化性能
+                LazyVStack(spacing: 16) {
+                    ForEach(items, id: \.self) { item in
+                        ContentCardView(title: item)
+                    }
                 }
             }
         }
         .padding([.top, .horizontal])
-        .animation(.easeInOut(duration: 0.2), value: tab)
+        .frame(minHeight: 1) // 确保至少有最小高度，触发布局更新
     }
 }
 

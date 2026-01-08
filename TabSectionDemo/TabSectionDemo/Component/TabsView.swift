@@ -27,19 +27,14 @@ struct TabsView: View {
                         )
                         .id(index)
                         .onTapGesture {
-                            withAnimation {
-                                currentSelect = index
-                                // 自动滚动到选中的标签位置
-                                scrollProxy.scrollTo(index, anchor: .center)
-                            }
+                            currentSelect = index
+                            // 自动滚动到选中的标签位置
+                            scrollProxy.scrollTo(index, anchor: .center)
                         }
                     }
                 }
                 .frame(minWidth: UIScreen.main.bounds.width)
             }
-            // 不设置固定高度，让 ScrollView 根据内容自适应
-            // TabItemView 高度 = padding(.vertical, 12) * 2 + 下划线(2) = 26
-            // 但实际测量可能因为 ScrollView 的默认行为而有所不同
             .onChange(of: currentSelect) { newValue in
                 // 当外部改变选中状态时，自动滚动到对应位置
                 withAnimation {
