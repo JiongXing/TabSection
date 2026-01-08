@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import TabSection
 
 /// 推荐内容卡片
 struct RecommendationCard: View {

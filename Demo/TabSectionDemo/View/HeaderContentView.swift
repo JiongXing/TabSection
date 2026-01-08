@@ -3,9 +3,11 @@
 //  TabSectionDemo
 //
 //  Created by jxing on 2026/1/7.
+//  Updated on 2026/1/8 to use TabSection framework
 //
 
 import SwiftUI
+import TabSection
 
 /// 头部内容视图（用于测试吸顶效果）
 struct HeaderContentView: View {
@@ -24,7 +26,7 @@ struct HeaderContentView: View {
                         .font(.system(size: 40))
                         .foregroundColor(.white)
                     
-                    Text("欢迎使用 Tabs 组件")
+                    Text("欢迎使用 TabSection")
                         .font(.title2)
                         .fontWeight(.bold)
                         .foregroundColor(.white)

@@ -1,0 +1,6 @@
+framework module TabSection {
+  umbrella header "TabSection-umbrella.h"
+
+  export *
+  module * { export * }
+}

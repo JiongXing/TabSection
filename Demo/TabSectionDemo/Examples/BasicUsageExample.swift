@@ -3,6 +3,7 @@
 //  TabSectionDemo
 //
 //  Created by jxing on 2026/1/8.
+//  演示 TabSection 框架的各种使用场景
 //
 
 import SwiftUI

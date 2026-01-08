@@ -1,0 +1,25 @@
+{
+  "name": "TabSection",
+  "version": "1.0.0",
+  "summary": "SwiftUI 实现的多标签页滚动吸顶组件",
+  "description": "TabSection 是一个基于 SwiftUI 的多标签页组件库，提供：\n- Tab 标签栏组件，支持横向滚动和自动居中\n- Section 吸顶效果，标签栏可以固定在顶部\n- 多分页列表管理，支持懒加载和下拉刷新\n- 完全可自定义的样式系统",
+  "homepage": "https://github.com/JiongXing/TabSection",
+  "license": {
+    "type": "MIT",
+    "file": "LICENSE"
+  },
+  "authors": {
+    "jxing": "your@email.com"
+  },
+  "source": {
+    "git": "https://github.com/JiongXing/TabSection.git",
+    "tag": "1.0.0"
+  },
+  "platforms": {
+    "ios": "15.0"
+  },
+  "swift_versions": "5.9",
+  "source_files": "Sources/TabSection/**/*.swift",
+  "frameworks": "SwiftUI",
+  "swift_version": "5.9"
+}

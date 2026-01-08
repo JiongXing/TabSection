@@ -1,0 +1,16 @@
+PODS:
+  - TabSection (1.0.0)
+
+DEPENDENCIES:
+  - TabSection (from `../`)
+
+EXTERNAL SOURCES:
+  TabSection:
+    :path: "../"
+
+SPEC CHECKSUMS:
+  TabSection: 7e9126f6168eb97d2198afe2ca0792ad0888973d
+
+PODFILE CHECKSUM: 0918894e1f44de931de0064941dcb04871fd7df0
+
+COCOAPODS: 1.16.2
