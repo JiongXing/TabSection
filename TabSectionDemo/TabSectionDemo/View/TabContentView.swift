@@ -17,14 +17,27 @@ struct TabContentView: View {
     var body: some View {
         GeometryReader { geometry in
             LazyVStack(spacing: 16) {
-                ForEach(items, id: \.self) { item in
-                    ContentCardView(title: item)
+                if items.isEmpty {
+                    // 空数据占位视图，确保高度不为 0
+                    EmptyDataView()
+                } else {
+                    ForEach(items, id: \.self) { item in
+                        ContentCardView(title: item)
+                    }
                 }
             }
             .padding([.top, .horizontal])
             .frame(width: geometry.size.width, alignment: .top)
+            .background(
+                GeometryReader { contentGeometry in
+                    Color.clear
+                        .preference(
+                            key: TabContentHeightKey.self,
+                            value: contentGeometry.size.height
+                        )
+                }
+            )
         }
-        .border(.red, width: 2)
     }
 }
 
@@ -48,6 +61,27 @@ private struct ContentCardView: View {
         .background(Color(.systemBackground))
         .cornerRadius(12)
         .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+    }
+}
+
+/// 空数据占位视图
+private struct EmptyDataView: View {
+    var body: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "tray")
+                .font(.system(size: 60))
+                .foregroundColor(.gray.opacity(0.5))
+            
+            Text("暂无内容")
+                .font(.headline)
+                .foregroundColor(.secondary)
+            
+            Text("该标签页暂时没有内容")
+                .font(.subheadline)
+                .foregroundColor(.secondary.opacity(0.8))
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 60)
     }
 }
 

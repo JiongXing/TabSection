@@ -17,9 +17,11 @@ struct ContentView: View {
     /// TabsView 实际测量的高度（从 GeometryReader 获取，更精确）
     @State private var tabsViewActualHeight: CGFloat = 46
     /// 顶部 Divider 高度
-    @State private var topDividerHeight: CGFloat = 0.33
+    @State private var topDividerHeight: CGFloat = 1
     /// 底部 Divider 高度
-    @State private var bottomDividerHeight: CGFloat = 0.33
+    @State private var bottomDividerHeight: CGFloat = 1
+    /// TabContentView 内容高度（从 PreferenceKey 获取，用于动态设置 TabView 高度）
+    @State private var tabContentHeight: CGFloat = 0
     
     var body: some View {
         GeometryReader { geometry in
@@ -44,12 +46,14 @@ struct ContentView: View {
                                     .tag(index)
                                 }
                             }
-                            // TabView 的高度设置为足够大，让外层 ScrollView 处理滚动
-                            .frame(height: max(geometry.size.height * 2, 1500))
+                            // 使用动态计算的高度，空数据时也有占位视图保证高度不为 0
+                            .frame(height: tabContentHeight > 0 ? tabContentHeight : geometry.size.height)
                             .tabViewStyle(.page(indexDisplayMode: .never))
-                            .border(.yellow, width: 2)
                         }
-                        .frame(height: max(geometry.size.height * 2, 1500))
+                        .frame(height: tabContentHeight > 0 ? tabContentHeight : geometry.size.height)
+                        .onPreferenceChange(TabContentHeightKey.self) { height in
+                            tabContentHeight = height
+                        }
                     } header: {
                         TabsView(
                             tabs: tabs,
@@ -63,13 +67,12 @@ struct ContentView: View {
                 // 下拉刷新功能
                 await refreshData()
             }
-            .ignoresSafeArea()
         }
     }
     
     /// 生成内容项（用于演示）
     private func generateContentItems(for tab: String) -> [String] {
-        return (1...15).map { "\(tab) - 内容 \($0)" }
+        return (0..<0).map { "\(tab) - 内容 \($0)" }
     }
     
     /// 下拉刷新数据
