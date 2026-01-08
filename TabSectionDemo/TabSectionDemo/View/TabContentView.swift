@@ -13,6 +13,8 @@ struct TabContentView: View {
     let title: String
     /// 内容数据（用于演示）
     let items: [String]
+    /// 当前标签页的索引（用于标识高度信息）
+    let index: Int
     
     var body: some View {
         GeometryReader { geometry in
@@ -33,7 +35,8 @@ struct TabContentView: View {
                     Color.clear
                         .preference(
                             key: TabContentHeightKey.self,
-                            value: contentGeometry.size.height
+                            // 发送当前 tab 的索引和高度信息
+                            value: [index: contentGeometry.size.height]
                         )
                 }
             )
@@ -84,4 +87,3 @@ private struct EmptyDataView: View {
         .padding(.vertical, 60)
     }
 }
-

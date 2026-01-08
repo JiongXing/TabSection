@@ -12,8 +12,10 @@ struct ContentView: View {
     let tabs = ["推荐", "关注", "最新", "热门", "视频", "科技", "娱乐", "体育"]
     /// 当前选中的标签索引
     @State private var currentSelect: Int = 0
-    /// TabContentView 内容高度（从 PreferenceKey 获取，用于动态设置 TabView 高度）
-    @State private var tabContentHeight: CGFloat = 0
+    /// 所有 Tab 的高度缓存（key: tab 索引, value: 高度）
+    @State private var tabHeights: [Int: CGFloat] = [:]
+    /// 当前显示高度（滑动结束后更新）
+    @State private var displayHeight: CGFloat = 0
     
     var body: some View {
         GeometryReader { geometry in
@@ -29,7 +31,8 @@ struct ContentView: View {
                         TabSectionContentView(
                             tabs: tabs,
                             currentSelect: $currentSelect,
-                            tabContentHeight: $tabContentHeight,
+                            tabHeights: $tabHeights,
+                            displayHeight: $displayHeight,
                             containerHeight: geometry.size.height,
                             generateContentItems: generateContentItems
                         )
@@ -167,37 +170,69 @@ private struct FeatureButton: View {
     }
 }
 
-/// Tab 区域内容视图（TabView 部分）
+/// Tab 区域内容视图（使用 PageView 实现）
 private struct TabSectionContentView: View {
     let tabs: [String]
     @Binding var currentSelect: Int
-    @Binding var tabContentHeight: CGFloat
+    /// 所有 Tab 的高度缓存
+    @Binding var tabHeights: [Int: CGFloat]
+    /// 当前显示高度（滑动结束后更新）
+    @Binding var displayHeight: CGFloat
     let containerHeight: CGFloat
     let generateContentItems: (String) -> [String]
     
+    /// 计算当前应该显示的高度
+    /// 策略：取 displayHeight 和当前 tab 高度的较大值，确保内容不被截断
+    private var effectiveHeight: CGFloat {
+        let currentTabHeight = tabHeights[currentSelect] ?? 0
+        
+        // 首次加载前，使用容器高度
+        if displayHeight == 0 && currentTabHeight == 0 {
+            return containerHeight
+        }
+        
+        // 取 displayHeight 和当前 tab 高度的较大值
+        // 这样可以确保：
+        // 1. 从小高度滑到大高度时，立即扩展以显示全部内容
+        // 2. 从大高度滑到小高度时，保持大高度直到滑动结束后才收缩
+        return max(displayHeight, currentTabHeight)
+    }
+    
     var body: some View {
-        // 使用 GeometryReader 解决 TabView 在 Section 中高度丢失的问题
-        GeometryReader { _ in
-            TabView(selection: $currentSelect) {
-                ForEach(Array(tabs.enumerated()), id: \.offset) { index, tab in
-                    TabContentView(
-                        title: tab,
-                        items: generateContentItems(tab)
-                    )
-                    .tag(index)
+        // 使用自定义 PageView 替代 TabView，获取真正的滑动结束回调
+        PageView(
+            pageCount: tabs.count,
+            currentIndex: $currentSelect,
+            onScrollEnded: { index in
+                // 滑动真正结束后，更新显示高度
+                if let newHeight = tabHeights[index], newHeight > 0 {
+                    withAnimation(.easeInOut(duration: 0.25)) {
+                        displayHeight = newHeight
+                    }
+                    #if DEBUG
+                    print("📏 滑动结束，高度更新到 Tab[\(index)]: \(newHeight)")
+                    #endif
                 }
             }
-            .tabViewStyle(.page(indexDisplayMode: .never))
+        ) { index in
+            TabContentView(
+                title: tabs[index],
+                items: generateContentItems(tabs[index]),
+                index: index
+            )
         }
-        .frame(height: tabContentHeight > 0 ? tabContentHeight : containerHeight)
-        .onPreferenceChange(TabContentHeightKey.self) { height in
-            // 注意：TabContentHeightKey 使用 max() 取所有标签页的最大高度
-            // 这确保 TabView 有足够高度显示所有标签页内容
-            // 如果希望高度随当前标签页动态变化，需要修改 TabContentHeightKey 的实现
-            tabContentHeight = height
-            #if DEBUG
-            print("📏 TabView 高度更新: \(height)")
-            #endif
+        .frame(height: effectiveHeight)
+        .onPreferenceChange(TabContentHeightKey.self) { heights in
+            // 更新所有 tab 的高度缓存
+            for (index, height) in heights {
+                if height > 0 {
+                    tabHeights[index] = height
+                }
+            }
+            // 首次加载时，立即设置显示高度
+            if displayHeight == 0, let currentHeight = tabHeights[currentSelect], currentHeight > 0 {
+                displayHeight = currentHeight
+            }
         }
     }
 }
