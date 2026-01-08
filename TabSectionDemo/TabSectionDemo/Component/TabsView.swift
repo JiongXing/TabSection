@@ -61,20 +61,24 @@ private struct TabItemView: View {
                 .animation(nil, value: UUID()) // 避免文字动画干扰
             
             // 下划线区域，保持固定高度以确保动画流畅
-            ZStack {
-                // 未选中时显示透明占位符
-                Rectangle()
-                    .fill(Color.clear)
-                    .frame(height: 2)
-                
-                // 选中时显示下划线，使用 matchedGeometryEffect 实现平滑过渡
-                if isSelected {
+            GeometryReader { geometry in
+                ZStack(alignment: .center) {
+                    // 未选中时显示透明占位符
                     Rectangle()
-                        .fill(Color(hex: "#1677ff"))
+                        .fill(Color.clear)
                         .frame(height: 2)
-                        .matchedGeometryEffect(id: "underline", in: namespace)
+                    
+                    // 选中时显示下划线，宽度为 TabItem 的一半，居中显示
+                    if isSelected {
+                        Rectangle()
+                            .fill(Color(hex: "#1677ff"))
+                            .frame(width: geometry.size.width * 0.5, height: 2)
+                            .matchedGeometryEffect(id: "underline", in: namespace)
+                    }
                 }
+                .frame(width: geometry.size.width, height: 2, alignment: .center)
             }
+            .frame(height: 2)
         }
     }
 }
