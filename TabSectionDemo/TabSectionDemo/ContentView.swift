@@ -12,14 +12,6 @@ struct ContentView: View {
     let tabs = ["推荐", "关注", "最新", "热门", "视频", "科技", "娱乐", "体育"]
     /// 当前选中的标签索引
     @State private var currentSelect: Int = 0
-    /// TabsView Header 的高度（从 PreferenceKey 获取，包含 Divider）
-    @State private var tabsHeaderHeight: CGFloat = 50
-    /// TabsView 实际测量的高度（从 GeometryReader 获取，更精确）
-    @State private var tabsViewActualHeight: CGFloat = 46
-    /// 顶部 Divider 高度
-    @State private var topDividerHeight: CGFloat = 1
-    /// 底部 Divider 高度
-    @State private var bottomDividerHeight: CGFloat = 1
     /// TabContentView 内容高度（从 PreferenceKey 获取，用于动态设置 TabView 高度）
     @State private var tabContentHeight: CGFloat = 0
     
@@ -36,7 +28,7 @@ struct ContentView: View {
                     Section {
                         // TabView 内容区域
                         // 使用 GeometryReader 解决 TabView 在 Section 中高度丢失的问题
-                        GeometryReader { tabGeometry in
+                        GeometryReader { _ in
                             TabView(selection: $currentSelect) {
                                 ForEach(Array(tabs.enumerated()), id: \.offset) { index, tab in
                                     TabContentView(
@@ -46,8 +38,6 @@ struct ContentView: View {
                                     .tag(index)
                                 }
                             }
-                            // 使用动态计算的高度，空数据时也有占位视图保证高度不为 0
-                            .frame(height: tabContentHeight > 0 ? tabContentHeight : geometry.size.height)
                             .tabViewStyle(.page(indexDisplayMode: .never))
                         }
                         .frame(height: tabContentHeight > 0 ? tabContentHeight : geometry.size.height)
@@ -55,11 +45,21 @@ struct ContentView: View {
                             tabContentHeight = height
                         }
                     } header: {
-                        TabsView(
-                            tabs: tabs,
-                            currentSelect: $currentSelect
-                        )
-                        .background(.white)
+                        VStack(spacing: 0) {
+                            // 顶部分割线
+                            Divider()
+                                .background(Color.gray.opacity(0.2))
+                            
+                            TabsView(
+                                tabs: tabs,
+                                currentSelect: $currentSelect
+                            )
+                            .background(.white)
+                            
+                            // 底部分割线
+                            Divider()
+                                .background(Color.gray.opacity(0.2))
+                        }
                     }
                 }
             }
@@ -72,7 +72,7 @@ struct ContentView: View {
     
     /// 生成内容项（用于演示）
     private func generateContentItems(for tab: String) -> [String] {
-        return (0..<0).map { "\(tab) - 内容 \($0)" }
+        return (1..<10).map { "\(tab) - 内容 \($0)" }
     }
     
     /// 下拉刷新数据
